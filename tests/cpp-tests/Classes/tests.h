@@ -121,5 +121,6 @@
 #include "VRTest/VRTest.h"
 #include "ZwoptexTest/ZwoptexTest.h"
 #include "SpriteFrameCacheTest/SpriteFrameCacheTest.h"
+#include "PaletteTest/PaletteTest.h"
 
 #endif

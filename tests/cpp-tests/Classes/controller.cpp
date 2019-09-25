@@ -42,7 +42,8 @@ class RootTests : public TestList
 {
 public:
     RootTests()
-    {
+	{
+		addTest("PaletteTest", []() {return new (std::nothrow) PaletteTest(); });
         addTest("Node: Scene3D", [](){return new (std::nothrow) Scene3DTests(); });
         addTest("ActionManager", [](){return new (std::nothrow) ActionManagerTests(); });
         addTest("Actions - Basic", [](){ return new (std::nothrow) ActionsTests(); });

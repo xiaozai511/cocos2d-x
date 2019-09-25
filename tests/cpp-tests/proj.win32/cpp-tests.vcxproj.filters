@@ -238,6 +238,9 @@
     <Filter Include="Classes\WindowTest">
       <UniqueIdentifier>{b7379517-97f9-4b73-a75c-0706211e4264}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Classes\PaletteTest">
+      <UniqueIdentifier>{e8bd755e-6272-4220-9b13-d1db0dea09ba}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -644,6 +647,9 @@
     </ClCompile>
     <ClCompile Include="..\Classes\ExtensionsTest\NetworkTest\WebSocketDelayTest.cpp">
       <Filter>Classes\ExtensionsTest\NetworkTest</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\PaletteTest\PaletteTest.cpp">
+      <Filter>Classes\PaletteTest</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1204,6 +1210,9 @@
     </ClInclude>
     <ClInclude Include="..\Classes\ExtensionsTest\NetworkTest\WebSocketDelayTest.h">
       <Filter>Classes\ExtensionsTest\NetworkTest</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\PaletteTest\PaletteTest.h">
+      <Filter>Classes\PaletteTest</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
