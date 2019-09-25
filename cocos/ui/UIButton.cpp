@@ -158,19 +158,17 @@ bool Button::createTitleRendererIfNull() {
 
 void Button::createTitleRenderer()
 {
-    _titleRenderer = Label::create();
-    _titleRenderer->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
-    addProtectedChild(_titleRenderer, TITLE_RENDERER_Z, -1);
+    setTitleLabel(Label::create());
 }
 
 /** replaces the current Label node with a new one */
 void Button::setTitleLabel(Label* label)
 {
-    if (_titleRenderer != label) {
-        CC_SAFE_RELEASE(_titleRenderer);
-        _titleRenderer = label;
-        CC_SAFE_RETAIN(_titleRenderer);
+    if (label && _titleRenderer != label) {
 
+        if (_titleRenderer) removeProtectedChild(_titleRenderer);
+
+        _titleRenderer = label;
         addProtectedChild(_titleRenderer, TITLE_RENDERER_Z, -1);
         updateTitleLocation();
     }
@@ -650,7 +648,7 @@ Size Button::getVirtualRendererSize() const
     if (nullptr != _titleRenderer)
     {
         Size titleSize = _titleRenderer->getContentSize();
-        if (!_normalTextureLoaded && _titleRenderer->getString().size() > 0)
+        if (!_normalTextureLoaded && !_titleRenderer->getString().empty())
         {
             return titleSize;
         }
@@ -718,7 +716,7 @@ void Button::setTitleAlignment(TextHAlignment hAlignment, TextVAlignment vAlignm
 
 void Button::setTitleText(const std::string& text)
 {
-    if (text.compare(getTitleText()) == 0) {
+    if (text == getTitleText()) {
         return;
     }
     

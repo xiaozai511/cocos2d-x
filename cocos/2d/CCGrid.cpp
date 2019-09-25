@@ -32,6 +32,7 @@ THE SOFTWARE.
 #include "2d/CCGrabber.h"
 #include "renderer/CCGLProgram.h"
 #include "renderer/CCGLProgramCache.h"
+#include "renderer/ccGLStateCache.h"
 #include "renderer/CCRenderer.h"
 #include "renderer/CCRenderState.h"
 #include "renderer/CCTexture2D.h"
@@ -166,7 +167,7 @@ bool GridBase::initWithSize(const Size& gridSize, Texture2D *texture, bool flipp
     return ret;
 }
 
-GridBase::~GridBase(void)
+GridBase::~GridBase()
 {
     CCLOGINFO("deallocing GridBase: %p", this);
 
@@ -208,6 +209,8 @@ void GridBase::set2DProjection()
     director->multiplyMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION, orthoMatrix);
 
     director->loadIdentityMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
+
+    GL::setProjectionMatrixDirty();
 }
 
 void GridBase::setGridRect(const cocos2d::Rect &rect)
@@ -215,7 +218,7 @@ void GridBase::setGridRect(const cocos2d::Rect &rect)
     _gridRect = rect;
 }
 
-void GridBase::beforeDraw(void)
+void GridBase::beforeDraw()
 {
     // save projection
     Director *director = Director::getInstance();
@@ -253,8 +256,7 @@ void GridBase::afterDraw(cocos2d::Node * /*target*/)
 //        kmGLTranslatef(-offset.x, -offset.y, 0);
 //    }
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _texture->getName());
+    GL::bindTexture2D(_texture->getName());
 
     // restore projection for default FBO .fixed bug #543 #544
     //TODO:         Director::getInstance()->setProjection(Director::getInstance()->getProjection());
@@ -264,17 +266,17 @@ void GridBase::afterDraw(cocos2d::Node * /*target*/)
     afterBlit();
 }
 
-void GridBase::blit(void)
+void GridBase::blit()
 {
     CCASSERT(0, "Subclass should implement it.");
 }
 
-void GridBase::reuse(void)
+void GridBase::reuse()
 {
     CCASSERT(0, "Subclass should implement it!");
 }
 
-void GridBase::calculateVertexPoints(void)
+void GridBase::calculateVertexPoints()
 {
     CCASSERT(0, "Subclass should implement it.");
 }
@@ -372,7 +374,7 @@ Grid3D::Grid3D()
 
 }
 
-Grid3D::~Grid3D(void)
+Grid3D::~Grid3D()
 {
     CC_SAFE_FREE(_texCoordinates);
     CC_SAFE_FREE(_vertices);
@@ -413,12 +415,11 @@ void Grid3D::afterBlit()
     }
 }
 
-void Grid3D::blit(void)
+void Grid3D::blit()
 {
     int n = _gridSize.width * _gridSize.height;
 
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_POSITION);
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_TEX_COORD);
+    GL::enableVertexAttribs( GL::VERTEX_ATTRIB_FLAG_POSITION | GL::VERTEX_ATTRIB_FLAG_TEX_COORD );
     _shaderProgram->use();
     _shaderProgram->setUniformsForBuiltins();
 
@@ -435,7 +436,7 @@ void Grid3D::blit(void)
     glDrawElements(GL_TRIANGLES, (GLsizei) n*6, GL_UNSIGNED_SHORT, _indices);
 }
 
-void Grid3D::calculateVertexPoints(void)
+void Grid3D::calculateVertexPoints()
 {
     float width = (float)_texture->getPixelsWide();
     float height = (float)_texture->getPixelsHigh();
@@ -545,7 +546,7 @@ void Grid3D::setVertex(const Vec2& pos, const Vec3& vertex)
     vertArray[index+2] = vertex.z;
 }
 
-void Grid3D::reuse(void)
+void Grid3D::reuse()
 {
     if (_reuseGrid > 0)
     {
@@ -565,7 +566,7 @@ TiledGrid3D::TiledGrid3D()
 
 }
 
-TiledGrid3D::~TiledGrid3D(void)
+TiledGrid3D::~TiledGrid3D()
 {
     CC_SAFE_FREE(_texCoordinates);
     CC_SAFE_FREE(_vertices);
@@ -653,7 +654,7 @@ TiledGrid3D* TiledGrid3D::create(const Size& gridSize, Texture2D *texture, bool 
     return ret;
 }
 
-void TiledGrid3D::blit(void)
+void TiledGrid3D::blit()
 {
     int n = _gridSize.width * _gridSize.height;
 
@@ -664,8 +665,7 @@ void TiledGrid3D::blit(void)
     //
     // Attributes
     //
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_POSITION);
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_TEX_COORD);
+    GL::enableVertexAttribs( GL::VERTEX_ATTRIB_FLAG_POSITION | GL::VERTEX_ATTRIB_FLAG_TEX_COORD );
 
     // position
     glVertexAttribPointer(GLProgram::VERTEX_ATTRIB_POSITION, 3, GL_FLOAT, GL_FALSE, 0, _vertices);
@@ -678,7 +678,7 @@ void TiledGrid3D::blit(void)
     CC_INCREMENT_GL_DRAWN_BATCHES_AND_VERTICES(1,n*6);
 }
 
-void TiledGrid3D::calculateVertexPoints(void)
+void TiledGrid3D::calculateVertexPoints()
 {
     float width = (float)_texture->getPixelsWide();
     float height = (float)_texture->getPixelsHigh();
@@ -789,7 +789,7 @@ Quad3 TiledGrid3D::getTile(const Vec2& pos) const
     return ret;
 }
 
-void TiledGrid3D::reuse(void)
+void TiledGrid3D::reuse()
 {
     if (_reuseGrid > 0)
     {

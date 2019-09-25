@@ -89,6 +89,7 @@ cocos2d.cpp \
 2d/CCAutoPolygon.cpp \
 3d/CCFrustum.cpp \
 3d/CCPlane.cpp \
+platform/CCDataManager.cpp \
 platform/CCFileUtils.cpp \
 platform/CCGLView.cpp \
 platform/CCImage.cpp \
@@ -185,6 +186,7 @@ renderer/CCTrianglesCommand.cpp \
 renderer/CCVertexAttribBinding.cpp \
 renderer/CCVertexIndexBuffer.cpp \
 renderer/CCVertexIndexData.cpp \
+renderer/ccGLStateCache.cpp \
 renderer/CCFrameBuffer.cpp \
 renderer/ccShaders.cpp \
 vr/CCVRDistortion.cpp \

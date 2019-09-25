@@ -50,7 +50,7 @@ public:
     virtual ~FileUtilsApple();
     /* override functions */
     virtual std::string getWritablePath() const override;
-    virtual std::string getFullPathForDirectoryAndFilename(const std::string& directory, const std::string& filename) const override;
+    virtual std::string getFullPathForFilenameWithinDirectory(const std::string& directory, const std::string& filename) const override;
 
     virtual ValueMap getValueMapFromFile(const std::string& filename) const override;
     virtual ValueMap getValueMapFromData(const char* filedata, int filesize) const override;
@@ -62,6 +62,8 @@ public:
 #endif
     
     virtual bool createDirectory(const std::string& path) const override;
+    virtual std::string getPathForDirectory(const std::string &dir, const std::string &resolutionDiretory, const std::string &searchPath) const override;
+
 private:
     virtual bool isFileExistInternal(const std::string& filePath) const override;
     virtual bool removeDirectory(const std::string& dirPath) const override;

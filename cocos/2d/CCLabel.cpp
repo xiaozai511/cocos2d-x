@@ -38,11 +38,11 @@
 #include "base/ccUTF8.h"
 #include "platform/CCFileUtils.h"
 #include "renderer/CCRenderer.h"
+#include "renderer/ccGLStateCache.h"
 #include "base/CCDirector.h"
 #include "base/CCEventListenerCustom.h"
 #include "base/CCEventDispatcher.h"
 #include "base/CCEventCustom.h"
-#include "base/ccUtils.h"
 #include "2d/CCFontFNT.h"
 
 NS_CC_BEGIN
@@ -667,7 +667,7 @@ bool Label::setBMFontFilePath(const std::string& bmfontFilePath, const Vec2& ima
 
 void Label::setString(const std::string& text)
 {
-    if (text.compare(_utf8Text))
+    if (text != _utf8Text)
     {
         _utf8Text = text;
         _contentDirty = true;
@@ -676,6 +676,13 @@ void Label::setString(const std::string& text)
         if (StringUtils::UTF8ToUTF32(_utf8Text, utf32String))
         {
             _utf32Text  = utf32String;
+        }
+
+        CCASSERT(_utf32Text.length() <= CC_LABEL_MAX_LENGTH, "Length of text should be less then 16384");
+        if (_utf32Text.length() > CC_LABEL_MAX_LENGTH)
+        {
+            cocos2d::log("Error: Label text is too long %d > %d and it will be truncated!", _utf32Text.length(), CC_LABEL_MAX_LENGTH);
+            _utf32Text = _utf32Text.substr(0, CC_LABEL_MAX_LENGTH);
         }
     }
 }
@@ -1539,7 +1546,7 @@ void Label::onDraw(const Mat4& transform, bool /*transformUpdated*/)
 {
     auto glprogram = getGLProgram();
     glprogram->use();
-    utils::setBlending(_blendFunc.src, _blendFunc.dst);
+    GL::blendFunc(_blendFunc.src, _blendFunc.dst);
 
     if (_shadowEnabled)
     {

@@ -27,11 +27,13 @@
 
 #include "renderer/CCRenderState.h"
 
+#include <cctype>
 #include <string>
 
 #include "renderer/CCTexture2D.h"
 #include "renderer/CCPass.h"
-#include "base/ccUtils.h"
+#include "renderer/ccGLStateCache.h"
+
 
 NS_CC_BEGIN
 
@@ -104,11 +106,7 @@ void RenderState::bind(Pass* pass)
     CC_ASSERT(pass);
 
     if (_texture)
-    {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, _texture->getName());
-    }
-    
+        GL::bindTexture2D(_texture->getName());
 
     // Get the combined modified state bits for our RenderState hierarchy.
     long stateOverrideBits = _state ? _state->_bits : 0;
@@ -249,7 +247,7 @@ void RenderState::StateBlock::bindNoRestore()
     }
     if ((_bits & RS_BLEND_FUNC) && (_blendSrc != _defaultState->_blendSrc || _blendDst != _defaultState->_blendDst))
     {
-        utils::setBlending((GLenum)_blendSrc, (GLenum)_blendDst);
+        GL::blendFunc((GLenum)_blendSrc, (GLenum)_blendDst);
         _defaultState->_blendSrc = _blendSrc;
         _defaultState->_blendDst = _blendDst;
     }
@@ -344,7 +342,7 @@ void RenderState::StateBlock::restore(long stateOverrideBits)
     }
     if (!(stateOverrideBits & RS_BLEND_FUNC) && (_defaultState->_bits & RS_BLEND_FUNC))
     {
-        utils::setBlending(GL_ONE, GL_ZERO);
+        GL::blendFunc(GL_ONE, GL_ZERO);
         _defaultState->_bits &= ~RS_BLEND_FUNC;
         _defaultState->_blendSrc = RenderState::BLEND_ONE;
         _defaultState->_blendDst = RenderState::BLEND_ZERO;
@@ -456,7 +454,7 @@ void RenderState::StateBlock::cloneInto(StateBlock* state) const
 
 static bool parseBoolean(const std::string& value)
 {
-    return (value.compare("true")==0);
+    return value == "true";
 }
 
 //static int parseInt(const std::string& value)
@@ -484,7 +482,8 @@ static RenderState::Blend parseBlend(const std::string& value)
 {
     // Convert the string to uppercase for comparison.
     std::string upper(value);
-    std::transform(upper.begin(), upper.end(), upper.begin(), (int(*)(int))toupper);
+    std::transform(upper.begin(), upper.end(), upper.begin(), [](unsigned char c) {
+        return std::toupper(c);});
     if (upper == "ZERO")
         return RenderState::BLEND_ZERO;
     else if (upper == "ONE")
@@ -638,39 +637,39 @@ static RenderState::FrontFace parseFrontFace(const std::string& value)
 
 void RenderState::StateBlock::setState(const std::string& name, const std::string& value)
 {
-    if (name.compare("blend") == 0)
+    if (name == "blend")
     {
         setBlend(parseBoolean(value));
     }
-    else if (name.compare("blendSrc") == 0)
+    else if (name == "blendSrc")
     {
         setBlendSrc(parseBlend(value));
     }
-    else if (name.compare("blendDst") == 0)
+    else if (name == "blendDst")
     {
         setBlendDst(parseBlend(value));
     }
-    else if (name.compare("cullFace") == 0)
+    else if (name == "cullFace")
     {
         setCullFace(parseBoolean(value));
     }
-    else if (name.compare("cullFaceSide") == 0)
+    else if (name == "cullFaceSide")
     {
         setCullFaceSide(parseCullFaceSide(value));
     }
-    else if (name.compare("frontFace") == 0)
+    else if (name == "frontFace")
     {
         setFrontFace(parseFrontFace(value));
     }
-    else if (name.compare("depthTest") == 0)
+    else if (name == "depthTest")
     {
         setDepthTest(parseBoolean(value));
     }
-    else if (name.compare("depthWrite") == 0)
+    else if (name == "depthWrite")
     {
         setDepthWrite(parseBoolean(value));
     }
-    else if (name.compare("depthFunc") == 0)
+    else if (name == "depthFunc")
     {
         setDepthFunction(parseDepthFunc(value));
     }

@@ -45,6 +45,7 @@ THE SOFTWARE.
 #include "platform/CCPlatformMacros.h"
 #include "base/CCDirector.h"
 #include "renderer/CCGLProgram.h"
+#include "renderer/ccGLStateCache.h"
 #include "renderer/CCGLProgramCache.h"
 #include "base/CCNinePatchImageParser.h"
 
@@ -463,7 +464,7 @@ Texture2D::~Texture2D()
 
     if(_name)
     {
-        glDeleteTextures(1, &_name);
+        GL::deleteTexture(_name);
     }
 }
 
@@ -471,7 +472,7 @@ void Texture2D::releaseGLTexture()
 {
     if(_name)
     {
-        glDeleteTextures(1, &_name);
+        GL::deleteTexture(_name);
     }
     _name = 0;
 }
@@ -553,7 +554,7 @@ bool Texture2D::hasPremultipliedAlpha() const
     return _hasPremultipliedAlpha;
 }
 
-bool Texture2D::initWithData(const void *data, ssize_t dataLen, Texture2D::PixelFormat pixelFormat, int pixelsWide, int pixelsHigh, const Size& /*contentSize*/)
+bool Texture2D::initWithData(const void *data, ssize_t dataLen, Texture2D::PixelFormat pixelFormat, int pixelsWide, int pixelsHigh, const Size& /*contentSize*/, bool preMultipliedAlpha)
 {
     CCASSERT(dataLen>0 && pixelsWide>0 && pixelsHigh>0, "Invalid size");
 
@@ -561,13 +562,11 @@ bool Texture2D::initWithData(const void *data, ssize_t dataLen, Texture2D::Pixel
     MipmapInfo mipmap;
     mipmap.address = (unsigned char*)data;
     mipmap.len = static_cast<int>(dataLen);
-    return initWithMipmaps(&mipmap, 1, pixelFormat, pixelsWide, pixelsHigh);
+    return initWithMipmaps(&mipmap, 1, pixelFormat, pixelsWide, pixelsHigh, preMultipliedAlpha);
 }
 
-bool Texture2D::initWithMipmaps(MipmapInfo* mipmaps, int mipmapsNum, PixelFormat pixelFormat, int pixelsWide, int pixelsHigh)
+bool Texture2D::initWithMipmaps(MipmapInfo* mipmaps, int mipmapsNum, PixelFormat pixelFormat, int pixelsWide, int pixelsHigh, bool preMultipliedAlpha)
 {
-
-
     //the pixelFormat must be a certain value 
     CCASSERT(pixelFormat != PixelFormat::NONE && pixelFormat != PixelFormat::AUTO, "the \"pixelFormat\" param must be a certain value!");
     CCASSERT(pixelsWide>0 && pixelsHigh>0, "Invalid size");
@@ -578,7 +577,6 @@ bool Texture2D::initWithMipmaps(MipmapInfo* mipmaps, int mipmapsNum, PixelFormat
         return false;
     }
     
-
     auto formatItr = _pixelFormatInfoTables.find(pixelFormat);
     if(formatItr == _pixelFormatInfoTables.end())
     {
@@ -625,13 +623,12 @@ bool Texture2D::initWithMipmaps(MipmapInfo* mipmaps, int mipmapsNum, PixelFormat
 
     if(_name != 0)
     {
-        glDeleteTextures(1, &_name);
+        GL::deleteTexture(_name);
         _name = 0;
     }
 
     glGenTextures(1, &_name);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _name);
+    GL::bindTexture2D(_name);
 
     if (mipmapsNum == 1)
     {
@@ -706,7 +703,7 @@ bool Texture2D::initWithMipmaps(MipmapInfo* mipmaps, int mipmapsNum, PixelFormat
     _maxS = 1;
     _maxT = 1;
 
-    _hasPremultipliedAlpha = false;
+    _hasPremultipliedAlpha = preMultipliedAlpha;
     _hasMipmaps = mipmapsNum > 1;
 
     // shader
@@ -718,8 +715,7 @@ bool Texture2D::updateWithData(const void *data,int offsetX,int offsetY,int widt
 {
     if (_name)
     {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, _name);
+        GL::bindTexture2D(_name);
         const PixelFormatInfo& info = _pixelFormatInfoTables.at(_pixelFormat);
         glTexSubImage2D(GL_TEXTURE_2D,0,offsetX,offsetY,width,height,info.format, info.type,data);
 
@@ -765,7 +761,6 @@ bool Texture2D::initWithImage(Image *image, PixelFormat format)
     PixelFormat      renderFormat = image->getRenderFormat();
     size_t           tempDataLen = image->getDataLen();
 
-
     if (image->getNumberOfMipmaps() > 1)
     {
         if (pixelFormat != image->getRenderFormat())
@@ -773,10 +768,7 @@ bool Texture2D::initWithImage(Image *image, PixelFormat format)
             CCLOG("cocos2d: WARNING: This image has more than 1 mipmaps and we will not convert the data format");
         }
 
-        initWithMipmaps(image->getMipmaps(), image->getNumberOfMipmaps(), image->getRenderFormat(), imageWidth, imageHeight);
-        
-        // set the premultiplied tag
-        _hasPremultipliedAlpha = image->hasPremultipliedAlpha();
+        initWithMipmaps(image->getMipmaps(), image->getNumberOfMipmaps(), image->getRenderFormat(), imageWidth, imageHeight, image->hasPremultipliedAlpha());
         
         return true;
     }
@@ -787,10 +779,7 @@ bool Texture2D::initWithImage(Image *image, PixelFormat format)
             CCLOG("cocos2d: WARNING: This image is compressed and we can't convert it for now");
         }
 
-        initWithData(tempData, tempDataLen, image->getRenderFormat(), imageWidth, imageHeight, imageSize);
-        
-        // set the premultiplied tag
-        _hasPremultipliedAlpha = image->hasPremultipliedAlpha();
+        initWithData(tempData, tempDataLen, image->getRenderFormat(), imageWidth, imageHeight, imageSize, image->hasPremultipliedAlpha());
         
         return true;
     }
@@ -801,18 +790,13 @@ bool Texture2D::initWithImage(Image *image, PixelFormat format)
 
         pixelFormat = convertDataToFormat(tempData, tempDataLen, renderFormat, pixelFormat, &outTempData, &outTempDataLen);
 
-        initWithData(outTempData, outTempDataLen, pixelFormat, imageWidth, imageHeight, imageSize);
-
+        initWithData(outTempData, outTempDataLen, pixelFormat, imageWidth, imageHeight, imageSize, image->hasPremultipliedAlpha());
 
         if (outTempData != nullptr && outTempData != tempData)
         {
-
             free(outTempData);
         }
 
-        // set the premultiplied tag
-        _hasPremultipliedAlpha = image->hasPremultipliedAlpha();
-        
         return true;
     }
 }
@@ -1191,13 +1175,12 @@ void Texture2D::drawAtPoint(const Vec2& point)
         point.x,            height  + point.y,
         width + point.x,    height  + point.y };
 
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_POSITION);
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_TEX_COORD);
+    GL::enableVertexAttribs( GL::VERTEX_ATTRIB_FLAG_POSITION | GL::VERTEX_ATTRIB_FLAG_TEX_COORD );
     _shaderProgram->use();
     _shaderProgram->setUniformsForBuiltins();
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _name);
+    GL::bindTexture2D( _name );
+
 
     glVertexAttribPointer(GLProgram::VERTEX_ATTRIB_POSITION, 2, GL_FLOAT, GL_FALSE, 0, vertices);
     glVertexAttribPointer(GLProgram::VERTEX_ATTRIB_TEX_COORD, 2, GL_FLOAT, GL_FALSE, 0, coordinates);
@@ -1218,13 +1201,11 @@ void Texture2D::drawInRect(const Rect& rect)
         rect.origin.x,                            rect.origin.y + rect.size.height,        /*0.0f,*/
         rect.origin.x + rect.size.width,        rect.origin.y + rect.size.height,        /*0.0f*/ };
 
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_POSITION);
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_TEX_COORD);
+    GL::enableVertexAttribs( GL::VERTEX_ATTRIB_FLAG_POSITION | GL::VERTEX_ATTRIB_FLAG_TEX_COORD );
     _shaderProgram->use();
     _shaderProgram->setUniformsForBuiltins();
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _name);
+    GL::bindTexture2D( _name );
 
     glVertexAttribPointer(GLProgram::VERTEX_ATTRIB_POSITION, 2, GL_FLOAT, GL_FALSE, 0, vertices);
     glVertexAttribPointer(GLProgram::VERTEX_ATTRIB_TEX_COORD, 2, GL_FLOAT, GL_FALSE, 0, coordinates);
@@ -1245,8 +1226,7 @@ void Texture2D::PVRImagesHavePremultipliedAlpha(bool haveAlphaPremultiplied)
 void Texture2D::generateMipmap()
 {
     CCASSERT(_pixelsWide == ccNextPOT(_pixelsWide) && _pixelsHigh == ccNextPOT(_pixelsHigh), "Mipmap texture only works in POT textures");
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _name);
+    GL::bindTexture2D( _name );
     glGenerateMipmap(GL_TEXTURE_2D);
     _hasMipmaps = true;
 #if CC_ENABLE_CACHE_TEXTURE_DATA
@@ -1265,8 +1245,7 @@ void Texture2D::setTexParameters(const TexParams &texParams)
         (_pixelsHigh == ccNextPOT(_pixelsHigh) || texParams.wrapT == GL_CLAMP_TO_EDGE),
         "GL_CLAMP_TO_EDGE should be used in NPOT dimensions");
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _name);
+    GL::bindTexture2D( _name );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, texParams.minFilter );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, texParams.magFilter );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texParams.wrapS );
@@ -1291,8 +1270,7 @@ void Texture2D::setAliasTexParameters()
         return;
     }
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _name);
+    GL::bindTexture2D( _name );
 
     if( ! _hasMipmaps )
     {
@@ -1324,8 +1302,7 @@ void Texture2D::setAntiAliasTexParameters()
         return;
     }
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _name);
+    GL::bindTexture2D( _name );
 
     if( ! _hasMipmaps )
     {
@@ -1507,10 +1484,12 @@ void Texture2D::removeSpriteFrameCapInset(SpriteFrame* spriteFrame)
 /// halx99 spec, ANDROID ETC1 ALPHA supports.
 void Texture2D::setAlphaTexture(Texture2D* alphaTexture)
 {
-    if (alphaTexture != nullptr) {
-        this->_alphaTexture = alphaTexture;
-        this->_alphaTexture->retain();
-        this->_hasPremultipliedAlpha = true; // PremultipliedAlpha should be true.
+    if (alphaTexture != nullptr)
+    {
+        alphaTexture->retain();
+        CC_SAFE_RELEASE(_alphaTexture);
+        _alphaTexture = alphaTexture;
+        _hasPremultipliedAlpha = true; // PremultipliedAlpha should be true.
     }
 }
 

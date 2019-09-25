@@ -7,14 +7,14 @@ project(${target_name})
 
 set(${target_name}_src
   ../manual/platform/android/CCLuaJavaBridge.cpp
-  ../manual/platform/android/jni/Java_org_cocos2dx_lib_Cocos2dxLuaJavaBridge.cpp
+  ../manual/platform/android/jni/Cocos2dxLuaJavaBridge.cpp
 )
 
 add_library(${target_name} STATIC
   ${${target_name}_src}
 )
 
-get_target_property(lua_header ext_lua INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(lua_header ext_luajit INTERFACE_INCLUDE_DIRECTORIES)
 get_target_property(tolua_header ext_tolua INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(${target_name}
   PRIVATE ../../..

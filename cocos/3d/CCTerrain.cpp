@@ -34,6 +34,8 @@ USING_NS_CC;
 #include "renderer/CCGLProgramState.h"
 #include "renderer/CCRenderer.h"
 #include "renderer/CCGLProgramStateCache.h"
+#include "renderer/ccGLStateCache.h"
+#include "renderer/CCRenderState.h"
 #include "base/CCDirector.h"
 #include "base/CCEventType.h"
 #include "2d/CCCamera.h"
@@ -148,26 +150,21 @@ void Terrain::onDraw(const Mat4 &transform, uint32_t /*flags*/)
 
     _stateBlock->bind();
 
-    glEnableVertexAttribArray(_positionLocation);
-    glEnableVertexAttribArray(_texcoordLocation);
-    glEnableVertexAttribArray(_normalLocation);
+    GL::enableVertexAttribs(1<<_positionLocation | 1 << _texcoordLocation | 1<<_normalLocation);
     glProgram->setUniformsForBuiltins(transform);
     _glProgramState->applyUniforms();
     glUniform3f(_lightDirLocation,_lightDir.x,_lightDir.y,_lightDir.z);
     if(!_alphaMap)
     {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, _detailMapTextures[0]->getName());
+        GL::bindTexture2D(_detailMapTextures[0]->getName());
         //getGLProgramState()->setUniformTexture("")
         glUniform1i(_detailMapLocation[0],0);
         glUniform1i(_alphaIsHasAlphaMapLocation,0);
-    }
-    else
+    }else
     {
         for(int i =0;i<_maxDetailMapValue;++i)
         {
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, _detailMapTextures[i]->getName());
+            GL::bindTexture2DN(i,_detailMapTextures[i]->getName());
             glUniform1i(_detailMapLocation[i],i);
 
             glUniform1f(_detailMapSizeLocation[i],_terrainData._detailMaps[i]._detailMapSize);
@@ -175,15 +172,13 @@ void Terrain::onDraw(const Mat4 &transform, uint32_t /*flags*/)
 
         glUniform1i(_alphaIsHasAlphaMapLocation,1);
 
-        glActiveTexture(GL_TEXTURE0 + 4);
-        glBindTexture(GL_TEXTURE_2D, _alphaMap->getName());
+        GL::bindTexture2DN(4, _alphaMap->getName());
         glUniform1i(_alphaMapLocation,4);
     }
     if (_lightMap)
     {
         glUniform1i(_lightMapCheckLocation, 1);
-        glActiveTexture(GL_TEXTURE0 + 5);
-        glBindTexture(GL_TEXTURE_2D, _lightMap->getName());
+        GL::bindTexture2DN(5, _lightMap->getName());
         glUniform1i(_lightMapLocation, 5);
     }else
     {
@@ -705,7 +700,7 @@ void Terrain::setAlphaMap(cocos2d::Texture2D * newAlphaMapTexture)
     _alphaMap = newAlphaMapTexture;
 }
 
-void Terrain::setDetailMap(unsigned int index, DetailMap detailMap)
+void Terrain::setDetailMap(unsigned int index, const DetailMap& detailMap)
 {
     if(index>4)
     {
@@ -1340,7 +1335,7 @@ bool Terrain::Chunk::getIntersectPointWithRay(const Ray& ray, Vec3& intersectPoi
 
     float minDist = FLT_MAX;
     bool isFind = false;
-    for (auto triangle : _trianglesList)
+    for (const auto& triangle : _trianglesList)
     {
         Vec3 p;
         if (triangle.getIntersectPoint(ray, p))
@@ -1588,10 +1583,10 @@ void Terrain::QuadTree::preCalculateAABB(const Mat4 & worldTransform)
 
 Terrain::QuadTree::~QuadTree()
 {
-    if(_tl) delete _tl;
-    if(_tr) delete _tr;
-    if(_bl) delete _bl;
-    if(_br) delete _br;
+    delete _tl;
+    delete _tr;
+    delete _bl;
+    delete _br;
 }
 
 Terrain::TerrainData::TerrainData(const std::string& heightMapsrc , const std::string& textureSrc, const Size & chunksize, float height, float scale)

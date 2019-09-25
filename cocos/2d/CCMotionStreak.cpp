@@ -28,8 +28,8 @@ THE SOFTWARE.
 #include "2d/CCMotionStreak.h"
 #include "math/CCVertex.h"
 #include "base/CCDirector.h"
-#include "base/ccUtils.h"
 #include "renderer/CCTextureCache.h"
+#include "renderer/ccGLStateCache.h"
 #include "renderer/CCTexture2D.h"
 #include "renderer/CCRenderer.h"
 #include "renderer/CCGLProgramState.h"
@@ -208,7 +208,7 @@ void MotionStreak::tintWithColor(const Color3B& colors)
     }
 }
 
-Texture2D* MotionStreak::getTexture(void) const
+Texture2D* MotionStreak::getTexture() const
 {
     return _texture;
 }
@@ -228,7 +228,7 @@ void MotionStreak::setBlendFunc(const BlendFunc &blendFunc)
     _blendFunc = blendFunc;
 }
 
-const BlendFunc& MotionStreak::getBlendFunc(void) const
+const BlendFunc& MotionStreak::getBlendFunc() const
 {
     return _blendFunc;
 }
@@ -238,7 +238,7 @@ void MotionStreak::setOpacity(GLubyte /*opacity*/)
     CCASSERT(false, "Set opacity no supported");
 }
 
-GLubyte MotionStreak::getOpacity(void) const
+GLubyte MotionStreak::getOpacity() const
 {
     CCASSERT(false, "Opacity no supported");
     return 0;
@@ -248,7 +248,7 @@ void MotionStreak::setOpacityModifyRGB(bool /*bValue*/)
 {
 }
 
-bool MotionStreak::isOpacityModifyRGB(void) const
+bool MotionStreak::isOpacityModifyRGB() const
 {
     return false;
 }
@@ -383,13 +383,10 @@ void MotionStreak::onDraw(const Mat4 &transform, uint32_t /*flags*/)
     getGLProgram()->use();
     getGLProgram()->setUniformsForBuiltins(transform);
 
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_POSITION);
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_TEX_COORD);
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_COLOR);
-    utils::setBlending(_blendFunc.src, _blendFunc.dst);
+    GL::enableVertexAttribs(GL::VERTEX_ATTRIB_FLAG_POS_COLOR_TEX );
+    GL::blendFunc( _blendFunc.src, _blendFunc.dst );
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _texture->getName());
+    GL::bindTexture2D( _texture );
 
     glVertexAttribPointer(GLProgram::VERTEX_ATTRIB_POSITION, 2, GL_FLOAT, GL_FALSE, 0, _vertices);
     glVertexAttribPointer(GLProgram::VERTEX_ATTRIB_TEX_COORD, 2, GL_FLOAT, GL_FALSE, 0, _texCoords);

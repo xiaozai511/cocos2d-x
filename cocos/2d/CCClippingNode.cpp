@@ -29,6 +29,7 @@
 #include "2d/CCClippingNode.h"
 #include "2d/CCDrawingPrimitives.h"
 #include "renderer/CCGLProgramCache.h"
+#include "renderer/ccGLStateCache.h"
 #include "renderer/CCRenderer.h"
 #include "renderer/CCRenderState.h"
 #include "base/CCDirector.h"
@@ -331,7 +332,7 @@ void ClippingNode::setStencil(Node *stencil)
 
 bool ClippingNode::hasContent() const
 {
-    return _children.size() > 0;
+    return !_children.empty();
 }
 
 GLfloat ClippingNode::getAlphaThreshold() const

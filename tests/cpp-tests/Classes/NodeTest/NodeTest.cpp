@@ -76,11 +76,11 @@ CocosNodeTests::CocosNodeTests()
     ADD_TEST_CASE(Issue16735Test);
 }
 
-TestCocosNodeDemo::TestCocosNodeDemo(void)
+TestCocosNodeDemo::TestCocosNodeDemo()
 {
 }
 
-TestCocosNodeDemo::~TestCocosNodeDemo(void)
+TestCocosNodeDemo::~TestCocosNodeDemo()
 {
 }
 
@@ -993,14 +993,10 @@ void MySprite::onDraw(const Mat4 &transform, uint32_t flags)
     getGLProgram()->use();
     getGLProgram()->setUniformsForBuiltins(transform);
 
-    cocos2d::utils::setBlending(_blendFunc.src, _blendFunc.dst);
+    GL::blendFunc( _blendFunc.src, _blendFunc.dst );
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _texture->getName());
-    
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_POSITION);
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_TEX_COORD);
-    glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_COLOR);
+    GL::bindTexture2D( _texture->getName() );
+    GL::enableVertexAttribs( GL::VERTEX_ATTRIB_FLAG_POS_COLOR_TEX );
 
     #define kQuadSize sizeof(_quad.bl)
     size_t offset = (size_t)&_quad;
@@ -1388,14 +1384,14 @@ void NodeNameTest::test(float dt)
     // search from parent
     // name is xxx/..
     i = 0;
-    parent->enumerateChildren("node/..", [&i](Node* node) -> bool {
+    parent->getChildByName("node1")->enumerateChildren("node[[:digit:]]+/node/..", [&i](Node* node) -> bool {
         ++i;
         return true;
     });
     CCAssert(i == 1, "");
     
     i = 0;
-    parent->enumerateChildren("node/..", [&i](Node* node) -> bool {
+    parent->getChildByName("node1")->enumerateChildren("node[[:digit:]]+/node/..", [&i](Node* node) -> bool {
         ++i;
         return false;
     });
@@ -1434,11 +1430,11 @@ void NodeNameTest::test(float dt)
     CCAssert(i == 1, "");
     
     i = 0;
-    parent->enumerateChildren("//node[[:digit:]]+/..", [&i](Node* node) -> bool {
+    parent->getChildByName("node1")->enumerateChildren("//node[[:digit:]]+/..", [&i](Node* node) -> bool {
         ++i;
         return false;
     });
-    CCAssert(i == 100, "");
+    CCAssert(i == 110, "");
     
     // utils::findChildren()
     

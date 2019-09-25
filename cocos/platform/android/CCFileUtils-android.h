@@ -34,6 +34,8 @@ Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
 #include "base/ccTypes.h"
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <memory>
 #include "jni.h"
 #include "android/asset_manager.h"
 
@@ -74,6 +76,8 @@ public:
     
     virtual long getFileSize(const std::string& filepath) const override;
     virtual std::vector<std::string> listFiles(const std::string& dirPath) const override;
+
+    virtual bool removeDirectory(const std::string& dirPath) const override;
 private:
     virtual bool isFileExistInternal(const std::string& strFilePath) const override;
     virtual bool isDirectoryExistInternal(const std::string& dirPath) const override;

@@ -38,6 +38,7 @@
 #include "renderer/CCTechnique.h"
 #include "renderer/CCPass.h"
 #include "renderer/CCRenderState.h"
+#include "renderer/ccGLStateCache.h"
 
 #include "base/CCConfiguration.h"
 #include "base/CCDirector.h"
@@ -237,7 +238,7 @@ Renderer::~Renderer()
     if (Configuration::getInstance()->supportsShareableVAO())
     {
         glDeleteVertexArrays(1, &_buffersVAO);
-        glBindVertexArray(0);
+        GL::bindVAO(0);
     }
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     Director::getInstance()->getEventDispatcher()->removeEventListener(_cacheTextureListener);
@@ -276,7 +277,7 @@ void Renderer::setupVBOAndVAO()
 {
     //generate vbo and vao for trianglesCommand
     glGenVertexArrays(1, &_buffersVAO);
-    glBindVertexArray(_buffersVAO);
+    GL::bindVAO(_buffersVAO);
 
     glGenBuffers(2, &_buffersVBO[0]);
 
@@ -306,7 +307,7 @@ void Renderer::setupVBOAndVAO()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(_indices[0]) * INDEX_VBO_SIZE, _indices, GL_STATIC_DRAW);
 
     // Must unbind the VAO before changing the element buffer.
-    glBindVertexArray(0);
+    GL::bindVAO(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -329,7 +330,7 @@ void Renderer::setupVBO()
 void Renderer::mapBuffers()
 {
     // Avoid changing the element buffer for whatever VAO might be bound.
-    glBindVertexArray(0);
+    GL::bindVAO(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, _buffersVBO[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(_verts[0]) * VBO_SIZE, _verts, GL_DYNAMIC_DRAW);
@@ -476,7 +477,7 @@ void Renderer::visitRenderQueue(RenderQueue& queue)
     //Process Global-Z < 0 Objects
     //
     const auto& zNegQueue = queue.getSubQueue(RenderQueue::QUEUE_GROUP::GLOBALZ_NEG);
-    if (zNegQueue.size() > 0)
+    if (!zNegQueue.empty())
     {
         if(_isDepthTestFor2D)
         {
@@ -510,7 +511,7 @@ void Renderer::visitRenderQueue(RenderQueue& queue)
     //Process Opaque Object
     //
     const auto& opaqueQueue = queue.getSubQueue(RenderQueue::QUEUE_GROUP::OPAQUE_3D);
-    if (opaqueQueue.size() > 0)
+    if (!opaqueQueue.empty())
     {
         //Clear depth to achieve layered rendering
         glEnable(GL_DEPTH_TEST);
@@ -533,7 +534,7 @@ void Renderer::visitRenderQueue(RenderQueue& queue)
     //Process 3D Transparent object
     //
     const auto& transQueue = queue.getSubQueue(RenderQueue::QUEUE_GROUP::TRANSPARENT_3D);
-    if (transQueue.size() > 0)
+    if (!transQueue.empty())
     {
         glEnable(GL_DEPTH_TEST);
         glDepthMask(false);
@@ -557,7 +558,7 @@ void Renderer::visitRenderQueue(RenderQueue& queue)
     //Process Global-Z = 0 Queue
     //
     const auto& zZeroQueue = queue.getSubQueue(RenderQueue::QUEUE_GROUP::GLOBALZ_ZERO);
-    if (zZeroQueue.size() > 0)
+    if (!zZeroQueue.empty())
     {
         if(_isDepthTestFor2D)
         {
@@ -593,7 +594,7 @@ void Renderer::visitRenderQueue(RenderQueue& queue)
     //Process Global-Z > 0 Queue
     //
     const auto& zPosQueue = queue.getSubQueue(RenderQueue::QUEUE_GROUP::GLOBALZ_POS);
-    if (zPosQueue.size() > 0)
+    if (!zPosQueue.empty())
     {
         if(_isDepthTestFor2D)
         {
@@ -793,7 +794,7 @@ void Renderer::drawBatchedTriangles()
     if (conf->supportsShareableVAO() && conf->supportsMapBuffer())
     {
         //Bind VAO
-        glBindVertexArray(_buffersVAO);
+        GL::bindVAO(_buffersVAO);
         //Set VBO data
         glBindBuffer(GL_ARRAY_BUFFER, _buffersVBO[0]);
 
@@ -825,9 +826,7 @@ void Renderer::drawBatchedTriangles()
 
         glBufferData(GL_ARRAY_BUFFER, sizeof(_verts[0]) * _filledVertex , _verts, GL_DYNAMIC_DRAW);
 
-        glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_POSITION);
-        glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_COLOR);
-        glEnableVertexAttribArray(GLProgram::VERTEX_ATTRIB_TEX_COORD);
+        GL::enableVertexAttribs(GL::VERTEX_ATTRIB_FLAG_POS_COLOR_TEX);
 
         // vertices
         glVertexAttribPointer(GLProgram::VERTEX_ATTRIB_POSITION, 3, GL_FLOAT, GL_FALSE, kQuadSize, (GLvoid*) offsetof(V3F_C4B_T2F, vertices));
@@ -856,7 +855,7 @@ void Renderer::drawBatchedTriangles()
     if (conf->supportsShareableVAO() && conf->supportsMapBuffer())
     {
         //Unbind VAO
-        glBindVertexArray(0);
+        GL::bindVAO(0);
     }
     else
     {

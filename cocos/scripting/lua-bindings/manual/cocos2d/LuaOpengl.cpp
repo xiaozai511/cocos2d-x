@@ -35,7 +35,7 @@
 #include "2d/CCActionCatmullRom.h"
 #include "2d/CCDrawingPrimitives.h"
 #include "renderer/CCRenderer.h"
-#include "platform/CCGL.h"
+#include "renderer/ccGLStateCache.h"
 
 using namespace cocos2d;
 
@@ -406,7 +406,7 @@ static int tolua_Cocos2d_glBlendColor00(lua_State* tolua_S)
     if (
         !tolua_isnumber(tolua_S, 1, 0, &tolua_err)          ||
         !tolua_isnumber(tolua_S, 2, 0, &tolua_err)          ||
-        !tolua_isnumber(tolua_S, 2, 0, &tolua_err)          ||
+        !tolua_isnumber(tolua_S, 3, 0, &tolua_err)          ||
         !tolua_isnumber(tolua_S, 4, 0, &tolua_err)          ||
         !tolua_isnoobj(tolua_S, 5, &tolua_err)
         )
@@ -4405,7 +4405,7 @@ static int tolua_Cocos2d_glEnableVertexAttribs00(lua_State* tolua_S)
 #endif
     {
         int arg0 = (int)tolua_tonumber(tolua_S, 1, 0);
-        glEnableVertexAttribArray(arg0);
+        GL::enableVertexAttribs(arg0);
     }
     return 0;
 #ifndef TOLUA_RELEASE

@@ -559,7 +559,7 @@ public:
      
      @warning Not support system font.
      @return the type of label
-     @since v3.18.0
+     @since v3.17.1
      */
     LabelType getLabelType() const { return _currentLabelType; }
     
@@ -660,7 +660,7 @@ protected:
     bool multilineTextWrapByChar();
     bool multilineTextWrapByWord();
     bool multilineTextWrap(const std::function<int(const std::u32string&, int, int)>& lambda);
-    void shrinkLabelToContentSize(const std::function<bool(void)>& lambda);
+    void shrinkLabelToContentSize(const std::function<bool()>& lambda);
     bool isHorizontalClamp();
     bool isVerticalClamp();
     void rescaleWithOriginalFontSize();

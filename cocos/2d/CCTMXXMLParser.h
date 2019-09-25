@@ -106,7 +106,7 @@ public:
      */
     virtual ~TMXLayerInfo();
 
-    void setProperties(ValueMap properties);
+    void setProperties(const ValueMap& properties);
     ValueMap& getProperties();
 
     ValueMap            _properties;
@@ -343,6 +343,7 @@ protected:
     int _currentFirstGID;
     bool _recordFirstGID;
     std::string _externalTilesetFilename;
+    std::string _externalTilesetFullPath;
 };
 
 // end of tilemap_parallax_nodes group

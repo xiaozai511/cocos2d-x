@@ -43,6 +43,7 @@
 #include "base/CCEventDispatcher.h"
 #include "base/CCScheduler.h"
 #include "platform/CCFileUtils.h"
+#include "renderer/ccGLStateCache.h"
 #include "scripting/js-bindings/manual/js_bindings_config.h"
 #include "scripting/js-bindings/auto/jsb_cocos2dx_auto.hpp"
 #include "scripting/js-bindings/manual/jsb_event_dispatcher_manual.h"
@@ -183,7 +184,7 @@ bool JSTouchDelegate::onTouchBegan(Touch *touch, Event* /*event*/)
     }
 
     return bRet;
-};
+}
 // optional
 
 void JSTouchDelegate::onTouchMoved(Touch *touch, Event* /*event*/)
@@ -3253,7 +3254,7 @@ bool js_cocos2dx_ccGLEnableVertexAttribs(JSContext *cx, uint32_t argc, jsval *vp
         ok &= jsval_to_uint32(cx, args.get(0), &arg0);
         JSB_PRECONDITION2(ok, cx, false, "Error processing arguments");
 
-        glEnableVertexAttribArray(arg0);
+        GL::enableVertexAttribs(arg0);
         args.rval().setUndefined();
         return true;
     }
@@ -4516,7 +4517,7 @@ bool js_cocos2dx_SpriteBatchNode_getDescendants(JSContext *cx, uint32_t argc, js
         JS::RootedValue jsret(cx);
 
         js_type_class_t *typeClass = nullptr;
-        if (ret.size() > 0)
+        if (!ret.empty())
             typeClass = js_get_type_from_native<cocos2d::Sprite>(ret[0]);
         for (size_t i = 0; i < vSize; i++)
         {
@@ -5254,7 +5255,7 @@ void get_or_create_js_obj(const std::string &name, JS::MutableHandleObject jsObj
     JS::RootedObject prop(cx);
 
     size_t start = 0;
-    size_t found = name.find_first_of(".", start);
+    size_t found = name.find_first_of('.', start);
     std::string subProp;
 
     while (found != std::string::npos)
@@ -5267,7 +5268,7 @@ void get_or_create_js_obj(const std::string &name, JS::MutableHandleObject jsObj
         }
 
         start = found+1;
-        found = name.find_first_of(".", start);
+        found = name.find_first_of('.', start);
     }
     if (start < name.length())
     {
@@ -5607,8 +5608,7 @@ void js_cocos2d_PolygonInfo_finalize(JSFreeOp *fop, JSObject *obj) {
     if (proxy)
     {
         cocos2d::PolygonInfo *nobj = static_cast<cocos2d::PolygonInfo *>(proxy->ptr);
-        if (nobj)
-            delete nobj;
+        delete nobj;
         jsb_remove_proxy(proxy);
     }
 }
@@ -5765,8 +5765,7 @@ void js_cocos2d_AutoPolygon_finalize(JSFreeOp *fop, JSObject *obj) {
     auto proxy = jsb_get_js_proxy(jsobj);
     if (proxy) {
         cocos2d::AutoPolygon *nobj = static_cast<cocos2d::AutoPolygon *>(proxy->ptr);
-        if (nobj)
-            delete nobj;
+        delete nobj;
         jsb_remove_proxy(proxy);
     }
 }
